@@ -62,6 +62,7 @@
   .panel .desc { font-size: 12px; color: var(--text-muted); margin: 0 0 16px; }
 
   header.panel { text-align: center; padding: 30px 28px; }
+  header .logo { display: block; margin: 0 auto 20px; width: 420px; max-width: 100%; border-radius: 12px; }
   header h1 { font-size: 22px; font-weight: 700; margin: 0 0 6px; }
   header .lede {
     font-size: 12px; color: var(--text-muted); margin: 0;
@@ -202,6 +203,7 @@
 <div class="wrap">
 
   <header class="panel">
+    <img class="logo" src="assets/zamansiz-logo.png" alt="Zamansız">
     <h1>Zamansız Buluşmalar #8 — Üretken Yapay Zekâ Atölyesi</h1>
     <p class="lede">05.09.2026</p>
   </header>
@@ -297,18 +299,6 @@
     Kaynak: <a href="https://www.anthropic.com/research/claude-code-expertise" target="_blank" rel="noopener">Anthropic — <em>Agentic coding and persistent returns to expertise</em></a> (Haziran 2026)</p>
   </details>
 
-  <!-- kaynak: 07-soru-evrimi.html -->
-  <details class="panel">
-    <summary>Seyircinin soruları nasıl evrildi?</summary>
-    <p class="desc">Soruların anlamsal karşılaştırması, 2025 → 2026</p>
-    <div class="arc">
-      <div class="pole p2025"><div class="yr">2025</div><div class="q">"Bize ne yapacak?"</div></div>
-      <div class="flow">⟶</div>
-      <div class="pole p2026"><div class="yr">2026</div><div class="q">"Onunla nasıl iş yaparız?"</div></div>
-    </div>
-    <div class="erows" id="evrows"></div>
-  </details>
-
   <!-- kaynaklar: 05-evcil-hayvan.html + 06-yakin-hissettiren.html -->
   <details class="panel">
     <summary>2026 katılımcılarının YZ ile ilişkisi</summary>
@@ -328,6 +318,18 @@
         </div>
       </div>
     </div>
+  </details>
+
+  <!-- kaynak: 07-soru-evrimi.html -->
+  <details class="panel">
+    <summary>Seyircinin soruları nasıl evrildi?</summary>
+    <p class="desc">Soruların anlamsal karşılaştırması, 2025 → 2026</p>
+    <div class="arc">
+      <div class="pole p2025"><div class="yr">2025</div><div class="q">"Bize ne yapacak?"</div></div>
+      <div class="flow">⟶</div>
+      <div class="pole p2026"><div class="yr">2026</div><div class="q">"Onunla nasıl iş yaparız?"</div></div>
+    </div>
+    <div class="erows" id="evrows"></div>
   </details>
 
 </div>
