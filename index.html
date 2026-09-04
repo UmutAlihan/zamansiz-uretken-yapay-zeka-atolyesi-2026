@@ -42,7 +42,10 @@
   .panel {
     background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
     padding: 24px 28px;
+    min-width: 0; /* grid items default to min-width:auto and would refuse to shrink */
   }
+  .plot, .pgroup, .plabels, .lplot, .duo, .xduo, .erow, .trends { min-width: 0; }
+  .lplot { max-width: 100%; }
   .panel h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
 
   /* collapsible sections */
@@ -201,13 +204,72 @@
 
   .note { font-size: 12px; color: var(--text-muted); margin-top: 14px; }
 
-  @media (max-width: 680px) {
-    .duo, .xduo { grid-template-columns: 1fr; }
-    .trends { grid-template-columns: 1fr; }
-    .erow { grid-template-columns: 1fr; }
+  /* touch devices have no hover: tapping the "?" focuses it and shows the tip */
+  .info:focus, .info:focus-within { border-color: var(--text-secondary); color: var(--text-secondary); outline: none; }
+  .info:focus .infotip, .info:focus-within .infotip { opacity: 1; }
+
+  @media (max-width: 700px) {
+    body { overflow-x: hidden; }
+    .wrap { margin: 20px auto; padding: 0 10px; gap: 12px; }
+    .panel { padding: 16px 14px; border-radius: 10px; }
+
+    /* header */
+    header.panel { padding: 22px 16px; }
+    header .logo { width: 240px; margin-bottom: 16px; }
+    header .kicker { font-size: 10px; letter-spacing: 0.12em; }
+    header h1 { font-size: 18px; line-height: 1.25; }
+
+    /* section bars: long titles wrap, so pin the arrow and number to the first line */
+    details.panel > summary { font-size: 14px; gap: 8px; align-items: flex-start; line-height: 1.35; }
+    details.panel > summary::before { margin-top: 3px; }
+    details.panel > summary .num { margin-top: 2px; }
+    .panel .desc { font-size: 11.5px; }
+
+    /* stacked bars */
+    .srow { grid-template-columns: 34px 1fr; gap: 8px; margin-bottom: 12px; }
+    .srow .year { font-size: 12px; }
+    .sbar { height: 22px; }
+    .seg .val { font-size: 10px; }
+    .legend { gap: 10px; }
+    .legend .key { font-size: 11px; }
+
+    /* grouped columns: slimmer bars and labels so all 8 themes still fit */
+    .plot { height: 150px; gap: 5px; }
+    .pcol { width: 11px; }
+    /* nudge the two labels of a pair apart so equal-height bars don't collide */
+    .pcol .val { font-size: 7.5px; }
+    .pgroup .pcol:first-child .val { transform: translateX(-72%); }
+    .pgroup .pcol:last-child .val { transform: translateX(-28%); }
+    .plabels { gap: 5px; }
+    .plabels .lab { font-size: 8.5px; line-height: 1.25; }
+
+    .trends { grid-template-columns: 1fr; gap: 8px; }
+
+    /* line chart is too dense to shrink: let it scroll sideways instead */
+    .lplot { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .lplot svg { width: 620px; max-width: none; }
+
+    /* soru evrimi */
+    .duo, .xduo { grid-template-columns: 1fr; gap: 20px; }
+    .erow { grid-template-columns: 1fr; gap: 6px; }
+    .card { font-size: 12px; }
     .card.c2026 { text-align: left; border-right: none; border-left: 3px solid var(--y2026); }
-    .shift { flex-direction: row; gap: 8px; }
+    .shift { flex-direction: row; gap: 8px; justify-content: flex-start; padding-left: 4px; }
     .shift .arrow { transform: rotate(90deg); }
+    .arc { grid-template-columns: 1fr; gap: 8px; }
+    .arc .flow { transform: rotate(90deg); text-align: center; }
+
+    /* donuts: stack the chart above its legend */
+    .dwrap { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .donut { width: 160px; height: 160px; align-self: center; }
+    .dpanel h3 { font-size: 12.5px; }
+
+    /* uzmanlık columns */
+    .cols { height: 110px; gap: 6px; }
+    .col .bar { max-width: 26px; }
+    .axis-note { font-size: 12px; }
+    .infotip { width: 190px; }
+    .src { font-size: 10.5px; }
   }
 </style>
 </head>
@@ -279,13 +341,13 @@
     <div class="xduo">
       <div class="xpanel">
         <h3><span class="swatch" style="background:var(--cat-1)"></span>YZ'nin yaptığı eylem sayısı
-          <span class="info">?<span class="infotip">Tek prompt ile tetiklenen action chain uzunluğu (dosya okuma, kod yazma, komut çalıştırma). Uzmanlar YZ'yi sık sık durdurmadan, ~2,4 kat daha uzun çalıştırabiliyor.</span></span></h3>
+          <span class="info" tabindex="0">?<span class="infotip">Tek prompt ile tetiklenen action chain uzunluğu (dosya okuma, kod yazma, komut çalıştırma). Uzmanlar YZ'yi sık sık durdurmadan, ~2,4 kat daha uzun çalıştırabiliyor.</span></span></h3>
         <div class="cols" id="colsActions"></div>
         <div class="xlab" id="xlab1"></div>
       </div>
       <div class="xpanel">
         <h3><span class="swatch" style="background:var(--cat-2)"></span>YZ'nin ürettiği kelime sayısı
-          <span class="info">?<span class="infotip">Tek prompt ile üretilen output hacmi (kod, analiz, açıklama) — bir leverage ölçüsü. Uzmanlar problemi net çerçevelediği için aynı araçtan ~5 kat fazla iş çıkarıyor.</span></span></h3>
+          <span class="info" tabindex="0">?<span class="infotip">Tek prompt ile üretilen output hacmi (kod, analiz, açıklama) — bir leverage ölçüsü. Uzmanlar problemi net çerçevelediği için aynı araçtan ~5 kat fazla iş çıkarıyor.</span></span></h3>
         <div class="cols" id="colsWords"></div>
         <div class="xlab" id="xlab2"></div>
       </div>
