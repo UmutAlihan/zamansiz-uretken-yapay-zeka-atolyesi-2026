@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zamansız Buluşmalar #8 — Üretken Yapay Zekâ Atölyesi</title>
+<style>
+  :root {
+    color-scheme: dark only;
+    /* surfaces: deep ink, panels lifted one step */
+    --page: #08090f;
+    --surface-1: #111420;
+    --surface-2: #171b2b;
+    --text-primary: #eef1f7;
+    --text-secondary: #a2a9bd;
+    --text-muted: #6e7690;
+    --baseline: #2c3345;
+    --border: rgba(255,255,255,0.08);
+
+    /* --- categorical spectrum ---------------------------------------
+       every legend item of a question gets its OWN hue, never a tint of
+       the same one. ord-1..4 walk the spectrum in order, so ranked
+       categories (yaş, sıklık) still read as a sequence.               */
+    --ord-1: #22e3ff;  /* cyan   */
+    --ord-2: #9dff3d;  /* lime   */
+    --ord-3: #ffb020;  /* amber  */
+    --ord-4: #ff3d9a;  /* magenta*/
+    /* neons are bright: segment labels sit in ink, not white */
+    --on-1: #08090f; --on-2: #08090f; --on-3: #08090f; --on-4: #08090f;
+
+    --cat-1: #22e3ff;
+    --cat-2: #ff3d9a;
+    --cat-3: #9dff3d;
+    --cat-4: #a855f7;
+    --cat-none: #454c61;
+
+    /* --- year identity ----------------------------------------------
+       years are a sequence, not categories: shifting hue would imply
+       they are different kinds of thing. one hue, dim → full.          */
+    --y2025: #2a6f8c;
+    --y2026: #22e3ff;
+    --y2025-soft: rgba(42,111,140,0.18);
+    --y2026-soft: rgba(34,227,255,0.10);
+
+    /* trend inks */
+    --trend-up: #00ff9d;
+    --trend-down: #ff4d6d;
+    --trend-flat: #ffc400;
+
+    /* glow is spent on data only — never on text or chrome */
+    --glow-cyan: 0 0 12px rgba(34,227,255,0.45);
+
+    --font-display: "Avenir Next", "Helvetica Neue", system-ui, sans-serif;
+    --font-num: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  body {
+    margin: 0; color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(900px 500px at 50% -80px, rgba(34,227,255,0.10), transparent 70%),
+      radial-gradient(700px 420px at 100% 30%, rgba(168,85,247,0.07), transparent 70%),
+      var(--page);
+    background-attachment: fixed;
+  }
+  .wrap { max-width: 900px; margin: 40px auto; padding: 0 16px; display: grid; gap: 18px; }
+
+  .panel {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px 28px;
+    min-width: 0; /* grid items default to min-width:auto and would refuse to shrink */
+    position: relative;
+  }
+  /* the open section carries a lit edge so it is findable from across a room */
+  details.panel[open] {
+    background: var(--surface-2);
+    border-color: rgba(34,227,255,0.22);
+  }
+  details.panel[open]::before {
+    content: ''; position: absolute; left: 0; top: 14px; bottom: 14px; width: 2px;
+    border-radius: 2px; background: var(--ord-1); box-shadow: var(--glow-cyan);
+  }
+  .plot, .pgroup, .plabels, .lplot, .duo, .xduo, .erow, .trends { min-width: 0; }
+  .lplot { max-width: 100%; }
+  .panel h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; font-family: var(--font-display); }
+
+  /* collapsible sections */
+  details.panel > summary {
+    cursor: pointer; list-style: none; user-select: none;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 15px; font-weight: 600;
+    font-family: var(--font-display); letter-spacing: -0.005em;
+  }
+  details.panel > summary::-webkit-details-marker { display: none; }
+  details.panel > summary::before {
+    content: '▸'; flex: none; font-size: 13px; color: var(--text-muted);
+    transition: transform .15s;
+  }
+  /* section numbers, counted automatically in document order */
+  .wrap { counter-reset: sec; }
+  details.panel > summary .num {
+    counter-increment: sec; flex: none;
+    font-size: 12px; font-weight: 700; color: var(--ord-1);
+    font-family: var(--font-num); min-width: 16px;
+  }
+  details.panel > summary .num::before { content: counter(sec) '.'; }
+  details.panel[open] > summary::before { transform: rotate(90deg); }
+  details.panel[open] > summary { margin-bottom: 12px; }
+  details.panel > summary:hover { color: var(--ord-1); }
+  details.panel > summary:hover::before { color: var(--ord-1); }
+  .panel .desc { font-size: 12px; color: var(--text-muted); margin: 0 0 16px; }
+
+  /* the hero sits straight on the page glow — no card around it */
+  header.panel {
+    text-align: center; padding: 44px 28px 34px;
+    background: none; border: none;
+  }
+  /* the logo ships as white-on-black: screen blending drops its black
+     ground into the page instead of stamping a rectangle on it */
+  header .logo {
+    display: block; margin: 0 auto 22px; width: 420px; max-width: 100%;
+    mix-blend-mode: screen;
+    /* the PNG's ground is #0a0a0a, not pure black — crush it so screen
+       blending leaves no ghost rectangle over the page glow */
+    filter: contrast(1.35) brightness(0.95);
+  }
+  header .kicker {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ord-1); margin: 0 0 10px;
+    font-family: var(--font-num);
+  }
+  header h1 {
+    font-size: 30px; font-weight: 700; margin: 0 0 14px;
+    font-family: var(--font-display); letter-spacing: -0.02em; line-height: 1.15;
+    text-shadow: 0 0 32px rgba(34,227,255,0.20);
+  }
+  header .lede {
+    font-size: 12px; color: var(--text-muted); margin: 0;
+    letter-spacing: 0.18em; font-family: var(--font-num);
+  }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
+  .legend .key { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .legend .swatch { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+
+  /* ---- stacked 100% bars (yaş, sıklık, abonelik) ---- */
+  .srow { display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .srow .year { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-align: right; font-family: var(--font-num); }
+  .sbar { display: flex; height: 26px; gap: 3px; }
+  .seg { display: flex; align-items: center; justify-content: center; border-radius: 3px; }
+  .seg .val { font-size: 12px; font-weight: 700; white-space: nowrap; font-family: var(--font-num); }
+
+  /* ---- grouped columns (amaçlar) ---- */
+  .plot {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+    gap: 14px; align-items: end; height: 190px; border-bottom: 1px solid var(--baseline);
+  }
+  .pgroup { display: flex; justify-content: center; align-items: end; gap: 2px; height: 100%; }
+  .pcol {
+    width: 20px; max-width: 40%; border-radius: 4px 4px 0 0; position: relative;
+    /* each bar carries its own glow: JS sets `color` to the bar hue too */
+    box-shadow: 0 0 14px -2px currentColor;
+  }
+  .pcol .val {
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    padding-bottom: 3px; font-size: 10px; font-weight: 600; color: var(--text-secondary);
+    font-family: var(--font-num); white-space: nowrap;
+  }
+  .plabels { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 14px; margin-top: 8px; }
+  .plabels .lab { font-size: 11px; color: var(--text-secondary); text-align: center; line-height: 1.3; }
+
+  .trends { display: grid; grid-template-columns: 3fr 3fr 2fr; gap: 14px; margin-top: 14px; }
+  .trend { border-radius: 10px; padding: 10px 12px; text-align: center; }
+  .trend .tname { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 3px; }
+  .trend .tdesc { font-size: 11px; color: var(--text-secondary); line-height: 1.35; }
+  .t-down { background: rgba(255,77,109,0.10); border: 1px solid rgba(255,77,109,0.25); }
+  .t-down .tname { color: var(--trend-down); }
+  .t-up   { background: rgba(0,255,157,0.09);  border: 1px solid rgba(0,255,157,0.25); }
+  .t-up .tname   { color: var(--trend-up); }
+  .t-flat { background: rgba(255,196,0,0.09);  border: 1px solid rgba(255,196,0,0.25); }
+  .t-flat .tname { color: var(--trend-flat); }
+
+  /* ---- uzmanlık-başarı line chart ---- */
+  .lplot svg { display: block; width: 100%; height: auto; }
+  .lplot svg path[stroke] { filter: drop-shadow(0 0 6px currentColor); }
+  .lplot .hit { cursor: default; }
+  #tipLine {
+    position: fixed; background: #05060b; color: var(--text-primary);
+    border: 1px solid rgba(34,227,255,0.35); box-shadow: 0 0 20px rgba(34,227,255,0.18);
+    font-size: 12px; padding: 6px 9px; border-radius: 6px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity .1s; z-index: 4;
+    transform: translate(-50%, calc(-100% - 10px));
+  }
+
+  /* ---- soru evrimi ---- */
+  .arc { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: center; margin-bottom: 20px; }
+  .arc .pole { padding: 11px 14px; border-radius: 10px; text-align: center; }
+  .arc .pole .yr { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; margin-bottom: 4px; font-family: var(--font-num); }
+  .arc .pole .q { font-size: 14px; font-weight: 600; line-height: 1.35; }
+  .arc .p2025 { background: var(--y2025-soft); border: 1.5px solid var(--y2025); }
+  .arc .p2025 .yr { color: var(--y2025); }
+  .arc .p2026 { background: var(--y2026-soft); border: 1.5px solid var(--y2026); }
+  .arc .p2026 .yr { color: var(--y2026); }
+  .arc .flow { font-size: 20px; color: var(--text-muted); }
+
+  .erows { display: grid; gap: 10px; }
+  .erow { display: grid; grid-template-columns: 1fr 140px 1fr; gap: 12px; align-items: stretch; }
+  .card {
+    border-radius: 10px; padding: 10px 13px; font-size: 12.5px; line-height: 1.4;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .card.c2025 { background: var(--y2025-soft); border-left: 3px solid var(--y2025); }
+  .card.c2026 { background: var(--y2026-soft); border-right: 3px solid var(--y2026); text-align: right; }
+  .card.empty { background: none; border: 1.5px dashed var(--baseline); color: var(--text-muted); font-style: italic; }
+  .shift { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center; }
+  .shift .arrow { color: var(--text-muted); font-size: 14px; line-height: 1; }
+  .shift .slab { font-size: 11px; font-weight: 600; color: var(--text-secondary); line-height: 1.3; }
+
+  /* ---- donuts (2026 duo) ---- */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .dpanel h3 { font-size: 13px; font-weight: 600; margin: 0 0 12px; line-height: 1.35; }
+  .dwrap { display: flex; align-items: center; gap: 18px; }
+  .donut { position: relative; width: 170px; height: 170px; flex: none; }
+  .donut svg { display: block; width: 100%; height: 100%; filter: drop-shadow(0 0 14px rgba(34,227,255,0.20)); }
+  .dlegend { display: flex; flex-direction: column; gap: 8px; }
+  .dlegend .key { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-secondary); line-height: 1.3; }
+  .dlegend .swatch { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+  .dlegend .pct { font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+  /* ---- uzmanlık columns ---- */
+  .xduo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .xpanel h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 0 0 10px; display: flex; align-items: center; gap: 7px; }
+  .xpanel .swatch { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+  .info {
+    margin-left: auto; flex: none; position: relative;
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 1px solid var(--baseline); color: var(--text-muted);
+    font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; cursor: default;
+  }
+  .info .infotip {
+    position: absolute; top: calc(100% + 8px); right: -4px;
+    width: 230px; background: #05060b; color: var(--text-primary);
+    border: 1px solid rgba(34,227,255,0.30); box-shadow: 0 0 20px rgba(0,0,0,0.6);
+    font-size: 12px; font-weight: 400; line-height: 1.5;
+    padding: 9px 11px; border-radius: 6px;
+    opacity: 0; pointer-events: none; transition: opacity .1s; z-index: 3;
+  }
+  .info:hover { border-color: var(--ord-1); color: var(--ord-1); }
+  .info:hover .infotip { opacity: 1; }
+  .cols { display: flex; align-items: flex-end; gap: 8px; height: 130px; border-bottom: 1px solid var(--baseline); }
+  .col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; }
+  .col .bar { width: 100%; max-width: 30px; border-radius: 4px 4px 0 0; }
+  .col .val { font-size: 10px; font-weight: 600; color: var(--text-secondary); font-family: var(--font-num); white-space: nowrap; }
+  .col.anchor .val { color: var(--text-primary); font-size: 11px; }
+  .xlab { display: flex; gap: 8px; margin-top: 5px; }
+  .xlab span { flex: 1; text-align: center; font-size: 11px; color: var(--text-muted); font-family: var(--font-num); }
+  .axis-note { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-align: center; margin-top: 10px; }
+  .src {
+    font-size: 11px; color: var(--text-muted); line-height: 1.5;
+    margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--border);
+  }
+  .src strong { color: var(--text-secondary); font-weight: 600; }
+  .src a { color: var(--ord-1); text-underline-offset: 2px; text-decoration-color: rgba(34,227,255,0.4); }
+
+  footer.panel { text-align: center; }
+  footer .punch { font-size: 15px; font-weight: 600; margin: 0; line-height: 1.5; }
+
+  .note { font-size: 12px; color: var(--text-muted); margin-top: 14px; }
+
+  /* touch devices have no hover: tapping the "?" focuses it and shows the tip */
+  .info:focus, .info:focus-within { border-color: var(--ord-1); color: var(--ord-1); outline: none; }
+  .info:focus .infotip, .info:focus-within .infotip { opacity: 1; }
+
+  @media (max-width: 700px) {
+    body { overflow-x: hidden; }
+    .wrap { margin: 20px auto; padding: 0 10px; gap: 12px; }
+    .panel { padding: 16px 14px; border-radius: 10px; }
+
+    /* header */
+    header.panel { padding: 28px 16px 22px; }
+    header .logo { width: 240px; margin-bottom: 18px; }
+    header .kicker { font-size: 10px; letter-spacing: 0.18em; }
+    header h1 { font-size: 22px; line-height: 1.2; }
+
+    /* section bars: long titles wrap, so pin the arrow and number to the first line */
+    details.panel > summary { font-size: 14px; gap: 8px; align-items: flex-start; line-height: 1.35; }
+    details.panel > summary::before { margin-top: 3px; }
+    details.panel > summary .num { margin-top: 2px; }
+    .panel .desc { font-size: 11.5px; }
+
+    /* stacked bars */
+    .srow { grid-template-columns: 34px 1fr; gap: 8px; margin-bottom: 12px; }
+    .srow .year { font-size: 12px; }
+    .sbar { height: 22px; }
+    .seg .val { font-size: 10px; }
+    .legend { gap: 10px; }
+    .legend .key { font-size: 11px; }
+
+    /* grouped columns: slimmer bars and labels so all 8 themes still fit */
+    .plot { height: 150px; gap: 5px; }
+    .pcol { width: 11px; }
+    /* nudge the two labels of a pair apart so equal-height bars don't collide */
+    .pcol .val { font-size: 7.5px; }
+    .pgroup .pcol:first-child .val { transform: translateX(-72%); }
+    .pgroup .pcol:last-child .val { transform: translateX(-28%); }
+    .plabels { gap: 5px; }
+    .plabels .lab { font-size: 8.5px; line-height: 1.25; }
+
+    .trends { grid-template-columns: 1fr; gap: 8px; }
+
+    /* line chart is too dense to shrink: let it scroll sideways instead */
+    .lplot { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .lplot svg { width: 620px; max-width: none; }
+
+    /* soru evrimi */
+    .duo, .xduo { grid-template-columns: 1fr; gap: 20px; }
+    .erow { grid-template-columns: 1fr; gap: 6px; }
+    .card { font-size: 12px; }
+    .card.c2026 { text-align: left; border-right: none; border-left: 3px solid var(--y2026); }
+    .shift { flex-direction: row; gap: 8px; justify-content: flex-start; padding-left: 4px; }
+    .shift .arrow { transform: rotate(90deg); }
+    .arc { grid-template-columns: 1fr; gap: 8px; }
+    .arc .flow { transform: rotate(90deg); text-align: center; }
+
+    /* donuts: stack the chart above its legend */
+    .dwrap { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .donut { width: 160px; height: 160px; align-self: center; }
+    .dpanel h3 { font-size: 12.5px; }
+
+    /* uzmanlık columns */
+    .cols { height: 110px; gap: 6px; }
+    .col .bar { max-width: 26px; }
+    .axis-note { font-size: 12px; }
+    .infotip { width: 190px; }
+    .src { font-size: 10.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="panel">
+    <img class="logo" src="assets/zamansiz-logo.png" alt="Zamansız">
+    <p class="kicker">Zamansız Buluşmalar #8</p>
+    <h1>Üretken Yapay Zekâ Atölyesi</h1>
+    <p class="lede">05.09.2026</p>
+  </header>
+
+  <!-- kaynak: 04-yas.html -->
+  <details class="panel">
+    <summary><span class="num"></span>Yaşınız?</summary>
+    <p class="desc">Yaş gruplarının dağılımı</p>
+    <div class="legend" id="legendAge"></div>
+    <div id="chartAge"></div>
+  </details>
+
+  <!-- kaynak: 01-kullanim-sikligi.html -->
+  <details class="panel">
+    <summary><span class="num"></span>Üretken YZ asistanlarını ne sıklıkta kullanıyorsunuz?</summary>
+    <div class="legend" id="legendFreq"></div>
+    <div id="chartFreq"></div>
+  </details>
+
+  <!-- kaynak: 02-ucretli-abonelik.html -->
+  <details class="panel">
+    <summary><span class="num"></span>Ücretli bir YZ aboneliğiniz var mı?</summary>
+    <div class="legend">
+      <span class="key"><span class="swatch" style="background:var(--ord-1)"></span>Evet</span>
+      <span class="key"><span class="swatch" style="background:var(--ord-4)"></span>Hayır</span>
+    </div>
+    <div id="chartAbo"></div>
+  </details>
+
+  <!-- kaynak: 03-kullanim-amaclari.html -->
+  <details class="panel">
+    <summary><span class="num"></span>Yapay Zekâ asistanlarını hangi amaçlar için kullandınız?</summary>
+    <p class="desc">Açık uçlu yanıtların tema kodlaması — yanıt verenlerin yüzdesi</p>
+    <div class="legend">
+      <span class="key"><span class="swatch" style="background:var(--y2025)"></span>2025</span>
+      <span class="key"><span class="swatch" style="background:var(--y2026)"></span>2026</span>
+    </div>
+    <div class="plot" id="plot3"></div>
+    <div class="plabels" id="labels3"></div>
+    <div class="trends">
+      <div class="trend t-down">
+        <div class="tname">Bilgi kaynağı ↓</div>
+        <div class="tdesc">Bilgi, akademik ve kod amaçlı kullanım payı geriledi</div>
+      </div>
+      <div class="trend t-up">
+        <div class="tname">Yaratıcı ortak ↑</div>
+        <div class="tdesc">İçerik üretimi, fikir geliştirme ve sohbet payı arttı</div>
+      </div>
+      <div class="trend t-flat">
+        <div class="tname">Gündelik asistan →</div>
+        <div class="tdesc">İş ve günlük yaşam kullanımı benzer kaldı</div>
+      </div>
+    </div>
+  </details>
+
+  <!-- kaynak: 08-uzmanlik-uretim.html -->
+  <details class="panel">
+    <summary><span class="num"></span>Uzmanlık arttıkça YZ her komutta daha fazlasını yapıyor</summary>
+    <p class="desc">Kullanıcının alan uzmanlığına göre, komut başına YZ'nin yaptığı iş (geometrik ortalama)</p>
+    <div class="xduo">
+      <div class="xpanel">
+        <h3><span class="swatch" style="background:var(--cat-1)"></span>YZ'nin yaptığı eylem sayısı
+          <span class="info" tabindex="0">?<span class="infotip">Tek prompt ile tetiklenen action chain uzunluğu (dosya okuma, kod yazma, komut çalıştırma). Uzmanlar YZ'yi sık sık durdurmadan, ~2,4 kat daha uzun çalıştırabiliyor.</span></span></h3>
+        <div class="cols" id="colsActions"></div>
+        <div class="xlab" id="xlab1"></div>
+      </div>
+      <div class="xpanel">
+        <h3><span class="swatch" style="background:var(--cat-2)"></span>YZ'nin ürettiği kelime sayısı
+          <span class="info" tabindex="0">?<span class="infotip">Tek prompt ile üretilen output hacmi (kod, analiz, açıklama) — bir leverage ölçüsü. Uzmanlar problemi net çerçevelediği için aynı araçtan ~5 kat fazla iş çıkarıyor.</span></span></h3>
+        <div class="cols" id="colsWords"></div>
+        <div class="xlab" id="xlab2"></div>
+      </div>
+    </div>
+    <p class="axis-note">1 = Acemi &nbsp;·&nbsp; 5 = Uzman</p>
+    <p class="src"><strong>Uzman kullanıcı, prompt başına ~2,4 kat action ve ~5 kat output tetikliyor.</strong><br>
+    Kaynak: <a href="https://www.anthropic.com/research/claude-code-expertise" target="_blank" rel="noopener">Anthropic — <em>Agentic coding and persistent returns to expertise</em></a> (Haziran 2026)<br>
+    Şekil 3; ~400.000 Claude Code oturumu.</p>
+  </details>
+
+  <!-- kaynak: 09-uzmanlik-basari.html -->
+  <details class="panel">
+    <summary><span class="num"></span>İşini bilen YZ'yi hedefe taşıyor, bilmeyen ilk engelde bırakıyor</summary>
+    <p class="desc">Problemi anlayan kullanıcı sorun çıktığında YZ'yi yeniden yönlendirip sonuca ulaşıyor; anlamayan yolun doğru olup olmadığını göremiyor ve vazgeçiyor</p>
+    <div class="legend">
+      <span class="key"><span class="swatch" style="background:var(--cat-1)"></span>Doğrulanmış sonuca ulaşan oturumlar</span>
+      <span class="key"><span class="swatch" style="background:var(--trend-down)"></span>Sorun çıkınca yarıda bırakılan oturumlar</span>
+    </div>
+    <div class="lplot"><svg id="plotExp" viewBox="0 0 660 300"></svg></div>
+    <p class="src"><strong>Fark araçta değil, kullanandaki anlayışta.</strong>
+    Problemi anlayan kullanıcı hatayı fark edip yönünü düzeltiyor: doğrulanmış başarı iki kattan fazla artıyor (%15 → %33).
+    Anlamadan devreden ise sorun çıktığında pes ediyor — terk etme %19'dan ~%7'ye seviye 2'de düşüp orada kalıyor.
+    Yani eşik, ustalık değil: alanına dair temel bir kavrayış, faydanın çoğunu tek başına getiriyor.<br>
+    Kaynak: <a href="https://www.anthropic.com/research/claude-code-expertise" target="_blank" rel="noopener">Anthropic — <em>Agentic coding and persistent returns to expertise</em></a> (Haziran 2026)</p>
+  </details>
+
+  <!-- kaynaklar: 05-evcil-hayvan.html + 06-yakin-hissettiren.html -->
+  <details class="panel">
+    <summary><span class="num"></span>Katılımcıların YZ ile ilişkisi</summary>
+    <div class="duo">
+      <div class="dpanel">
+        <h3>YZ asistanı evcil hayvanınız olsaydı hangisi olurdu?</h3>
+        <div class="dwrap">
+          <div class="donut"><svg viewBox="0 0 220 220" id="svgPet"></svg></div>
+          <div class="dlegend" id="legPet"></div>
+        </div>
+      </div>
+      <div class="dpanel">
+        <h3>YZ kullanırken hangisi daha yakın hissettiriyor?</h3>
+        <div class="dwrap">
+          <div class="donut"><svg viewBox="0 0 220 220" id="svgFeel"></svg></div>
+          <div class="dlegend" id="legFeel"></div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <!-- kaynak: 07-soru-evrimi.html -->
+  <details class="panel">
+    <summary><span class="num"></span>Seyircinin soruları nasıl evrildi?</summary>
+    <p class="desc">Soruların anlamsal karşılaştırması, 2025 → 2026</p>
+    <div class="arc">
+      <div class="pole p2025"><div class="yr">2025</div><div class="q">"Bize ne yapacak?"</div></div>
+      <div class="flow">⟶</div>
+      <div class="pole p2026"><div class="yr">2026</div><div class="q">"Onunla nasıl iş yaparız?"</div></div>
+    </div>
+    <div class="erows" id="evrows"></div>
+  </details>
+
+</div>
+
+<script>
+/* ============ shared: 100% stacked bar renderer ============ */
+function renderStacked(chartId, legendId, cats, data) {
+  if (legendId) {
+    document.getElementById(legendId).innerHTML = cats.map(c =>
+      `<span class="key"><span class="swatch" style="background:var(${c.varName})"></span>${c.label}</span>`
+    ).join('');
+  }
+  const chart = document.getElementById(chartId);
+  data.forEach(d => {
+    const total = d.counts.reduce((a, b) => a + b, 0);
+    const row = document.createElement('div');
+    row.className = 'srow';
+    const bar = cats.map((c, i) => {
+      const pct = d.counts[i] / total * 100;
+      const pctLabel = Math.round(pct);
+      const onVar = c.onVar || `--on-${i+1}`;
+      const inner = pct >= 9 ? `<span class="val" style="color:var(${onVar})">${pctLabel}%</span>` : '';
+      return `<div class="seg" style="flex:${pct} 0 0; background:var(${c.varName}); box-shadow:0 0 14px -3px var(${c.varName})">${inner}</div>`;
+    }).join('');
+    row.innerHTML = `<div class="year">${d.year}</div><div class="sbar">${bar}</div>`;
+    chart.appendChild(row);
+  });
+}
+
+/* ============ 04-yas ============ */
+renderStacked('chartAge', 'legendAge', [
+  { label: '15–17', varName: '--ord-1' },
+  { label: '18–24', varName: '--ord-2' },
+  { label: '25–34', varName: '--ord-3' },
+  { label: '35+',   varName: '--ord-4' },
+], [
+  { year: '2025', counts: [9, 12, 5, 3] },
+  { year: '2026', counts: [2, 6, 5, 2] },
+]);
+
+/* ============ 01-kullanim-sikligi ============ */
+renderStacked('chartFreq', 'legendFreq', [
+  { label: "Google'dan çok",   varName: '--ord-1' },
+  { label: 'Günde 1-2 kez',    varName: '--ord-2' },
+  { label: 'Birkaç günde bir', varName: '--ord-3' },
+  { label: 'Çok seyrek',       varName: '--ord-4' },
+], [
+  { year: '2024', counts: [2, 19, 26, 55] },
+  { year: '2025', counts: [11, 11, 4, 3] },
+  { year: '2026', counts: [8, 4, 2, 1] },
+]);
+
+/* ============ 02-ucretli-abonelik ============ */
+renderStacked('chartAbo', null, [
+  { label: 'Evet',  varName: '--ord-1', onVar: '--on-1' },
+  { label: 'Hayır', varName: '--ord-4', onVar: '--on-4' },
+], [
+  { year: '2025', counts: [13, 16] },
+  { year: '2026', counts: [8, 7] },
+]);
+
+/* ============ 03-kullanim-amaclari ============ */
+const N3 = { y2025: 29, y2026: 15 };
+const THEMES3 = [
+  { short: 'Bilgi /<br>araştırma',  c2025: 16, c2026: 7 },
+  { short: 'Eğitim /<br>akademik',  c2025: 12, c2026: 4 },
+  { short: 'Kod /<br>teknik',       c2025: 3,  c2026: 1 },
+  { short: 'İçerik<br>üretimi',     c2025: 9,  c2026: 6 },
+  { short: 'Fikir &<br>planlama',   c2025: 5,  c2026: 6 },
+  { short: 'Sohbet &<br>duygular',  c2025: 2,  c2026: 5 },
+  { short: 'İş /<br>girişim',       c2025: 6,  c2026: 3 },
+  { short: 'Günlük<br>yaşam',       c2025: 8,  c2026: 3 },
+];
+const MAX3 = 60;
+const plot3 = document.getElementById('plot3');
+const labels3 = document.getElementById('labels3');
+THEMES3.forEach(t => {
+  const cols = [
+    { count: t.c2025, n: N3.y2025, varName: '--y2025' },
+    { count: t.c2026, n: N3.y2026, varName: '--y2026' },
+  ].map(r => {
+    const pct = r.count / r.n * 100;
+    return `<div class="pcol" style="height:${pct / MAX3 * 100}%; background:var(${r.varName}); color:var(${r.varName})">
+      <span class="val">%${Math.round(pct)}</span>
+    </div>`;
+  }).join('');
+  const g = document.createElement('div');
+  g.className = 'pgroup';
+  g.innerHTML = cols;
+  plot3.appendChild(g);
+  const lab = document.createElement('div');
+  lab.className = 'lab';
+  lab.innerHTML = t.short;
+  labels3.appendChild(lab);
+});
+
+/* ============ 07-soru-evrimi ============ */
+const EVOLUTION = [
+  { q2025: 'Yapay zeka işimizi elimizden alır mı?', shift: 'edilgenden etkene',
+    q2026: 'Projeleri lab\'dan gerçek ölçekte canlıya nasıl alırız?' },
+  { q2025: 'Bizi tembelleştiren bir araç mı?', shift: 'şüpheden çözüm arayışına',
+    q2026: 'Ayak uydurabilmek için neler yapmamız gerekir?' },
+  { q2025: 'Deepfake, veri gizliliği… zararları neler?', shift: 'risk kaygısı sürüyor',
+    q2026: 'İnsanlık için bir tehdit olacak mı?' },
+  { q2025: 'Duyguları anlayıp empati kurabilir mi? Doğruyu nasıl ayırt ediyor?', shift: 'davranıştan varlığa',
+    q2026: 'Bilinç oluşturabilir mi?' },
+  { q2025: 'Nasıl daha verimli kullanırım? Bilmediğimiz neler yapabiliyor?', shift: 'soru olmaktan çıktı',
+    q2026: null, empty2026: 'Kimse sormadı — kullanım artık gündelik pratik' },
+];
+document.getElementById('evrows').innerHTML = EVOLUTION.map(e => {
+  const right = e.q2026
+    ? `<div class="card c2026"><div>${e.q2026}</div></div>`
+    : `<div class="card c2026 empty"><div>${e.empty2026}</div></div>`;
+  return `<div class="erow">
+    <div class="card c2025"><div>${e.q2025}</div></div>
+    <div class="shift"><span class="arrow">⟶</span><span class="slab">${e.shift}</span></div>
+    ${right}
+  </div>`;
+}).join('');
+
+/* ============ donuts (05, 06) ============ */
+function drawDonut(svgId, legId, data) {
+  const total = data.reduce((a, d) => a + d.count, 0);
+  const cx = 110, cy = 110, R = 105, r = 62;
+  const pt = (radius, angle) => {
+    const a = (angle - 90) * Math.PI / 180;
+    return [cx + radius * Math.cos(a), cy + radius * Math.sin(a)];
+  };
+  const arc = (a0, a1) => {
+    const large = a1 - a0 > 180 ? 1 : 0;
+    const [x0, y0] = pt(R, a0), [x1, y1] = pt(R, a1);
+    const [x2, y2] = pt(r, a1), [x3, y3] = pt(r, a0);
+    return `M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1} L ${x2} ${y2} A ${r} ${r} 0 ${large} 0 ${x3} ${y3} Z`;
+  };
+  let angle = 0;
+  document.getElementById(svgId).innerHTML = data.map(d => {
+    const sweep = d.count / total * 360;
+    const pct = Math.round(d.count / total * 100);
+    const path = `<path d="${arc(angle, angle + sweep)}" fill="var(${d.varName})" stroke="var(--page)" stroke-width="2"/>`;
+    const mid = angle + sweep / 2;
+    let label = '';
+    if (sweep >= 45) {
+      const [lx, ly] = pt((R + r) / 2, mid);
+      label = `<text x="${lx}" y="${ly - 6}" text-anchor="middle" dominant-baseline="middle" font-size="20">${d.emoji}</text>
+        <text x="${lx}" y="${ly + 16}" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="700" fill="${d.ink || '#08090f'}">%${pct}</text>`;
+    } else {
+      const [lx, ly] = pt(R - 14, mid);
+      label = `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-size="15">${d.emoji}</text>`;
+    }
+    angle += sweep;
+    return path + label;
+  }).join('');
+  document.getElementById(legId).innerHTML = data.map(d => {
+    const pct = Math.round(d.count / total * 100);
+    return `<span class="key"><span class="swatch" style="background:var(${d.varName})"></span>${d.label}&nbsp;<span class="pct">%${pct}</span></span>`;
+  }).join('');
+}
+
+drawDonut('svgPet', 'legPet', [
+  { label: 'Köpek',         emoji: '🐶', count: 8, varName: '--cat-1' },
+  { label: 'Kedi',          emoji: '🐱', count: 6, varName: '--cat-2' },
+  { label: 'Muhabbet kuşu', emoji: '🦜', count: 1, varName: '--cat-3' },
+]);
+
+drawDonut('svgFeel', 'legFeel', [
+  { label: 'Bilinçler arası portal',  emoji: '🌀', count: 6, varName: '--cat-1' },
+  { label: 'Makinenin bilinçlenmesi', emoji: '🤖', count: 4, varName: '--cat-2' },
+  { label: 'Hiçbiri',                 emoji: '😐', count: 3, varName: '--cat-none', ink: '#eef1f7' },
+  { label: 'Arkadaşım',               emoji: '🫂', count: 2, varName: '--cat-3' },
+]);
+
+/* ============ 08-uzmanlik-uretim ============ */
+const XLEVELS = ['1', '2', '3', '4', '5'];
+const XACTIONS = { vals: [4.9, 6.8, 8.3, 9.6, 11.7], anchors: [0, 4], fmt: v => v.toLocaleString('tr-TR'), varName: '--cat-1' };
+const XWORDS   = { vals: [607, 1000, 1550, 2250, 3200], anchors: [0, 4], fmt: v => v >= 1000 ? (v/1000).toLocaleString('tr-TR') + 'k' : v, varName: '--cat-2' };
+function drawCols(id, s) {
+  const max = Math.max(...s.vals);
+  document.getElementById(id).innerHTML = s.vals.map((v, i) => {
+    const h = v / max * 100;
+    const anchor = s.anchors.includes(i);
+    const approx = anchor ? '' : '≈';
+    return `<div class="col${anchor ? ' anchor' : ''}">
+      <span class="val">${approx}${s.fmt(v)}</span>
+      <div class="bar" style="height:${h}px; background:var(${s.varName}); opacity:${anchor ? 1 : 0.55}; box-shadow:0 0 14px -3px var(${s.varName})"></div>
+    </div>`;
+  }).join('');
+}
+drawCols('colsActions', XACTIONS);
+drawCols('colsWords', XWORDS);
+['xlab1', 'xlab2'].forEach(id =>
+  document.getElementById(id).innerHTML = XLEVELS.map(l => `<span>${l}</span>`).join('')
+);
+
+/* ============ 09-uzmanlik-basari ============ */
+(function () {
+  const SERIES = [
+    { name: 'Doğrulanmış sonuca ulaşan', unit: 'tüm oturumların payı', color: 'var(--cat-1)',
+      vals: [15, 21.5, 29, 30, 33], anchors: [0, 4], firstLabel: 'below' },
+    { name: 'Yarıda bırakılan', unit: 'sorun yaşayan oturumların payı', color: 'var(--trend-down)',
+      vals: [19, 6.5, 5.5, 5.5, 7], anchors: [0, 4], firstLabel: 'above' },
+  ];
+  const XN = ['Acemi', '', '', '', 'Uzman'];
+  const W = 660, H = 300, M = { t: 26, r: 52, b: 44, l: 40 };
+  const pw = W - M.l - M.r, ph = H - M.t - M.b, YMAX = 40;
+  const x = i => M.l + i / 4 * pw;
+  const y = v => M.t + (1 - v / YMAX) * ph;
+  let out = `<rect x="${x(0)}" y="${M.t}" width="${x(1) - x(0)}" height="${ph}" fill="rgba(34,227,255,0.09)"/>
+    <text x="${(x(0) + x(1)) / 2}" y="${M.t - 10}" text-anchor="middle" font-size="11" font-weight="600"
+      fill="var(--text-secondary)">eşik: temel anlayış yetiyor</text>`;
+  for (let v = 0; v <= YMAX; v += 10) {
+    out += `<line x1="${M.l}" y1="${y(v)}" x2="${W - M.r}" y2="${y(v)}"
+        stroke="${v === 0 ? 'var(--baseline)' : 'rgba(255,255,255,0.07)'}" stroke-width="1"/>
+      <text x="${M.l - 8}" y="${y(v)}" text-anchor="end" dominant-baseline="middle"
+        font-size="11" fill="var(--text-muted)">%${v}</text>`;
+  }
+  XLEVELS.forEach((l, i) => {
+    out += `<text x="${x(i)}" y="${H - M.b + 18}" text-anchor="middle" font-size="12"
+        font-weight="600" fill="var(--text-secondary)">${l}</text>`;
+    if (XN[i]) out += `<text x="${x(i)}" y="${H - M.b + 33}" text-anchor="middle"
+        font-size="11" fill="var(--text-muted)">${XN[i]}</text>`;
+  });
+  SERIES.forEach(s => {
+    const d = s.vals.map((v, i) => `${i ? 'L' : 'M'} ${x(i)} ${y(v)}`).join(' ');
+    out += `<path d="${d}" fill="none" stroke="${s.color}" style="color:${s.color}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    s.vals.forEach((v, i) => {
+      const exact = s.anchors.includes(i);
+      const label = `${exact ? '' : '≈'}%${v.toLocaleString('tr-TR')}`;
+      out += `<circle cx="${x(i)}" cy="${y(v)}" r="4.5" fill="${s.color}"
+          stroke="var(--page)" stroke-width="2"/>`;
+      if (exact) {
+        if (i === 0) {
+          const dy = s.firstLabel === 'below' ? 20 : -12;
+          out += `<text x="${x(i)}" y="${y(v) + dy}" text-anchor="middle"
+              font-size="12" font-weight="600" fill="var(--text-primary)">${label}</text>`;
+        } else {
+          out += `<text x="${x(i) + 10}" y="${y(v)}" text-anchor="start" dominant-baseline="middle"
+              font-size="12" font-weight="600" fill="var(--text-primary)">${label}</text>`;
+        }
+      }
+      out += `<circle class="hit" cx="${x(i)}" cy="${y(v)}" r="14" fill="transparent"
+          data-tip="Seviye ${XLEVELS[i]} · ${s.name}: ${label} (${s.unit})"/>`;
+    });
+  });
+  document.getElementById('plotExp').innerHTML = out;
+
+  const tip = document.createElement('div');
+  tip.id = 'tipLine';
+  document.body.appendChild(tip);
+  document.querySelectorAll('#plotExp .hit').forEach(c => {
+    c.addEventListener('mousemove', e => {
+      tip.textContent = c.dataset.tip;
+      tip.style.left = e.clientX + 'px';
+      tip.style.top = e.clientY + 'px';
+      tip.style.opacity = 1;
+    });
+    c.addEventListener('mouseleave', () => tip.style.opacity = 0);
+  });
+})();
+</script>
+</body>
+</html>
