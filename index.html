@@ -83,6 +83,14 @@
     font-size: 12px; color: var(--text-muted); margin: 0;
     letter-spacing: 0.08em; font-variant-numeric: tabular-nums;
   }
+  /* theme swap: href is rewritten on deploy (neon.html / index.html) */
+  header .swap { margin: 16px 0 0; }
+  header .swap a {
+    display: inline-block; text-decoration: none;
+    font-size: 12px; font-weight: 600; color: var(--y2026);
+    border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px;
+  }
+  header .swap a:hover { border-color: var(--y2026); background: var(--y2026-soft); }
 
   .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
   .legend .key { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
@@ -281,6 +289,7 @@
     <p class="kicker">Zamansız Buluşmalar #8</p>
     <h1>Üretken Yapay Zekâ Atölyesi</h1>
     <p class="lede">05.09.2026</p>
+    <p class="swap"><a href="neon.html">Neon sürüme geç →</a></p>
   </header>
 
   <!-- kaynak: 04-yas.html -->
