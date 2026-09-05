@@ -125,7 +125,7 @@
     filter: contrast(1.35) brightness(0.95);
   }
   header .kicker {
-    font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
     color: var(--ord-1); margin: 0 0 10px;
     font-family: var(--font-num);
   }
@@ -139,7 +139,7 @@
     letter-spacing: 0.18em; font-family: var(--font-num);
   }
   /* theme swap: href is rewritten on deploy (neon.html / index.html) */
-  header .swap a + a { margin-left: 8px; }
+  header .swap { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
   header .swap { margin: 18px 0 0; }
   header .swap a {
     display: inline-block; text-decoration: none;
@@ -289,7 +289,7 @@
     /* header */
     header.panel { padding: 28px 16px 22px; }
     header .logo { width: 240px; margin-bottom: 18px; }
-    header .kicker { font-size: 10px; letter-spacing: 0.18em; }
+    header .kicker { font-size: 12px; letter-spacing: 0.18em; }
     header h1 { font-size: 22px; line-height: 1.2; }
 
     /* section bars: long titles wrap, so pin the arrow and number to the first line */
@@ -354,7 +354,7 @@
     <p class="kicker">Zamansız Buluşmalar #8</p>
     <h1>Üretken Yapay Zekâ Atölyesi</h1>
     <p class="lede">05.09.2026</p>
-    <p class="swap"><a href="klasik.html">Açık sürüme geç →</a> <a href="mimariler.html">Mimariler →</a></p>
+    <p class="swap"><a href="mimariler.html">Sunum →</a><a href="klasik.html">Açık sürüme geç →</a></p>
   </header>
 
   <!-- kaynak: 04-yas.html -->

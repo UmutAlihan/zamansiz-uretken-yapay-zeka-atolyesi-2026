@@ -75,7 +75,7 @@
   header.panel { text-align: center; padding: 30px 28px; }
   header .logo { display: block; margin: 0 auto 20px; width: 420px; max-width: 100%; border-radius: 12px; }
   header .kicker {
-    font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
     color: var(--y2026); margin: 0 0 6px;
   }
   header h1 { font-size: 22px; font-weight: 700; margin: 0 0 8px; }
@@ -84,7 +84,7 @@
     letter-spacing: 0.08em; font-variant-numeric: tabular-nums;
   }
   /* theme swap: href is rewritten on deploy (neon.html / index.html) */
-  header .swap a + a { margin-left: 8px; }
+  header .swap { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
   header .swap { margin: 16px 0 0; }
   header .swap a {
     display: inline-block; text-decoration: none;
@@ -225,7 +225,7 @@
     /* header */
     header.panel { padding: 22px 16px; }
     header .logo { width: 240px; margin-bottom: 16px; }
-    header .kicker { font-size: 10px; letter-spacing: 0.12em; }
+    header .kicker { font-size: 12px; letter-spacing: 0.12em; }
     header h1 { font-size: 18px; line-height: 1.25; }
 
     /* section bars: long titles wrap, so pin the arrow and number to the first line */
@@ -290,7 +290,7 @@
     <p class="kicker">Zamansız Buluşmalar #8</p>
     <h1>Üretken Yapay Zekâ Atölyesi</h1>
     <p class="lede">05.09.2026</p>
-    <p class="swap"><a href="index.html">Neon sürüme geç →</a> <a href="mimariler.html">Mimariler →</a></p>
+    <p class="swap"><a href="mimariler.html">Sunum →</a><a href="index.html">Neon sürüme geç →</a></p>
   </header>
 
   <!-- kaynak: 04-yas.html -->
