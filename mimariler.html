@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mimariler — Zamansız Buluşmalar #8</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface-1: #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --border: rgba(11,11,11,0.10);
+    --accent: #1c5cab;
+    --nav-w: 216px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-snap-type: y mandatory; }
+  body {
+    margin: 0; background: var(--page); color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+
+  .slide {
+    min-height: 100vh; scroll-snap-align: start;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 48px 40px 56px; gap: 22px;
+  }
+
+  .head { display: flex; align-items: baseline; gap: 12px; }
+  .num {
+    font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em; color: var(--accent);
+    border: 1px solid rgba(28,92,171,0.28); border-radius: 5px; padding: 2px 7px;
+  }
+  h2 { font-size: 19px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .step {
+    font-size: 11.5px; font-weight: 600; color: var(--text-secondary);
+    letter-spacing: 0.02em; padding-left: 2px;
+  }
+  .step::before { content: "· "; color: var(--text-muted); }
+
+  .figure {
+    display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: center;
+    max-width: 1180px; width: 100%;
+  }
+  .figure img {
+    max-width: 100%; max-height: 68vh; width: auto; height: auto;
+    object-fit: contain; display: block;
+    background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px;
+  }
+  /* step 5 carries two images — let them share the row and shrink together */
+  .figure.pair img { max-height: 56vh; flex: 1 1 420px; min-width: 320px; }
+
+  /* bir üst görsel + altında yan yana iki görsel */
+  .figure.stack { flex-direction: column; gap: 16px; }
+  .figure.stack > img { max-height: 34vh; }
+  .figure.stack .lead { max-height: 34vh; }
+  .figure.stack .row {
+    display: flex; flex-wrap: wrap; gap: 16px;
+    align-items: center; justify-content: center; width: 100%;
+  }
+  .figure.stack .row img { max-height: 34vh; flex: 1 1 360px; min-width: 300px; }
+
+  .figure img { cursor: zoom-in; }
+
+  /* tek tık daha küçük dursun istenen görseller */
+  .figure.pair img.smaller { max-height: 44vh; flex: 0 1 340px; }
+
+  /* ---- hover büyütme katmanı ---- */
+  #zoom {
+    position: fixed; inset: 0; z-index: 50;
+    display: none; align-items: center; justify-content: center;
+    padding: 3vh 3vw;
+    background: rgba(249,249,247,0.97);
+    pointer-events: none; /* fareyi engellemesin ki görselden çıkınca kapansın */
+  }
+  #zoom.on { display: flex; }
+  #zoom img {
+    max-width: 100%; max-height: 94vh; width: auto; height: auto;
+    object-fit: contain;
+    background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 10px; padding: 8px;
+    box-shadow: 0 18px 50px rgba(11,11,11,0.18);
+  }
+
+  /* ---- sekmeler ---- */
+  .tabs { display: flex; flex-direction: column; gap: 5px; margin-bottom: 18px; }
+  .tabs a {
+    font-size: 12px; font-weight: 600; text-decoration: none;
+    padding: 7px 12px; border-radius: 8px;
+    color: var(--text-secondary); border: 1px solid var(--border);
+    background: var(--page);
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .tabs a:hover { color: var(--text-primary); background: #f1f1ee; }
+  .tabs a.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+  /* ---- sol taraftaki cetvel ---- */
+  .nav {
+    position: fixed; left: 0; top: 0; bottom: 0; width: var(--nav-w);
+    display: flex; flex-direction: column; justify-content: center; gap: 2px;
+    padding: 24px 16px 24px 20px; z-index: 20;
+    background: var(--surface-1); border-right: 1px solid var(--border);
+    overflow-y: auto;
+  }
+  .nav > a {
+    position: relative; display: flex; align-items: baseline; gap: 8px;
+    padding: 6px 8px 6px 12px; border-radius: 6px;
+    font-size: 12px; line-height: 1.35; text-decoration: none;
+    color: var(--text-muted);
+    transition: color .15s, background .15s;
+  }
+  .nav > a::before {
+    content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 2px; height: 0; border-radius: 2px; background: var(--accent);
+    transition: height .18s;
+  }
+  .nav > a .n {
+    font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums;
+    opacity: 0.7; min-width: 15px;
+  }
+  .nav > a:hover { color: var(--text-secondary); background: rgba(11,11,11,0.035); }
+  .nav > a.active { color: var(--accent); font-weight: 600; background: rgba(28,92,171,0.07); }
+  .nav > a.active::before { height: 60%; }
+  .nav > a.sub { padding-left: 30px; font-size: 11.5px; }
+
+  .nav .group {
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0 8px 6px 12px; margin-top: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav .group:first-child { margin-top: 0; }
+
+  /* slayt başlığında da alan rozeti */
+  .domain-tag {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-muted);
+    border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px;
+    align-self: center;
+  }
+
+  .slide { padding-left: calc(var(--nav-w) + 40px); }
+
+  @media (max-width: 860px) {
+    .slide { padding: 32px 18px 40px; }
+    .figure.pair img { max-height: none; }
+    .nav { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Bölümler">
+  <div class="tabs">
+    <a href="index.html">Anket Sonuçları</a>
+    <a href="mimariler.html" class="active">Mimariler</a>
+  </div>
+  <div class="group">Yazılım</div>
+  <a href="#s1"><span class="n">01</span><span>Perceptron</span></a>
+  <a href="#s2"><span class="n">02</span><span>Deep Neural Networks</span></a>
+  <a href="#s3"><span class="n">03</span><span>Transformers Architecture</span></a>
+  <a href="#s4a"><span class="n">04</span><span>Attention Architecture</span></a>
+  <a href="#s6"><span class="n">05</span><span>Inference Engine</span></a>
+  <a href="#s7"><span class="n">06</span><span>Datacenter Scale Distributed Inference</span></a>
+  <div class="group">Donanım</div>
+  <a href="#s8a"><span class="n">07</span><span>Ölçeklenme · Çip</span></a>
+  <a href="#s8b" class="sub"><span>Kasa</span></a>
+  <a href="#s8c" class="sub"><span>Kasalar</span></a>
+  <a href="#s8d" class="sub"><span>Veri merkezi</span></a>
+</nav>
+
+<section class="slide" id="s1">
+  <div class="head"><span class="domain-tag">Yazılım</span><span class="num">01</span><h2>Perceptron</h2></div>
+  <div class="figure">
+    <img src="assets/gorseller/perceptron.webp" alt="Perceptron şeması">
+  </div>
+</section>
+
+<section class="slide" id="s2">
+  <div class="head"><span class="domain-tag">Yazılım</span><span class="num">02</span><h2>Deep Neural Networks</h2></div>
+  <div class="figure">
+    <img src="assets/gorseller/feedforawrd.webp" alt="Feedforward sinir ağı şeması">
+  </div>
+</section>
+
+<section class="slide" id="s3">
+  <div class="head"><span class="domain-tag">Yazılım</span><span class="num">03</span><h2>Transformers Architecture</h2></div>
+  <div class="figure pair">
+    <img src="assets/gorseller/attention_research_1.webp" alt="Attention araştırması #1">
+    <img src="assets/gorseller/attention-formula-2.png" alt="Attention formülü">
+  </div>
+</section>
+
+<section class="slide" id="s4a">
+  <div class="head"><span class="domain-tag">Yazılım</span><span class="num">04</span><h2>Attention Architecture</h2></div>
+  <div class="figure stack">
+    <img class="lead" src="assets/gorseller/attention-mechanism.webp" alt="Attention mekanizması">
+    <div class="row">
+      <img src="assets/gorseller/architecture.png" alt="Attention mimarisi">
+      <img src="assets/gorseller/qsa_arch.png" alt="QSA mimarisi">
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="s6">
+  <div class="head"><span class="domain-tag">Yazılım</span><span class="num">05</span><h2>Inference Engine</h2></div>
+  <div class="figure pair">
+    <img src="assets/gorseller/pagedattention.webp" alt="PagedAttention şeması">
+    <img src="assets/gorseller/inference-engine.webp" alt="Inference engine şeması">
+  </div>
+</section>
+
+<section class="slide" id="s7">
+  <div class="head"><span class="domain-tag">Yazılım</span><span class="num">06</span><h2>Datacenter Scale Distributed Inference</h2></div>
+  <div class="figure pair">
+    <img src="assets/gorseller/llm-d-arch.svg" alt="llm-d mimari şeması">
+    <img class="smaller" src="assets/gorseller/cluster.png" alt="Cluster şeması">
+  </div>
+</section>
+
+<section class="slide" id="s8a">
+  <div class="head"><span class="domain-tag">Donanım</span><span class="num">07</span><h2>Ölçeklenme</h2><span class="step">Çip</span></div>
+  <div class="figure">
+    <img src="assets/gorseller/chip-vera-rubin-nvl4-ari-beyaz.webp" alt="Vera Rubin NVL4 çipi">
+  </div>
+</section>
+
+<section class="slide" id="s8b">
+  <div class="head"><span class="domain-tag">Donanım</span><span class="num">07</span><h2>Ölçeklenme</h2><span class="step">Kasa</span></div>
+  <div class="figure">
+    <img src="assets/gorseller/kasa.webp" alt="Tek kasa">
+  </div>
+</section>
+
+<section class="slide" id="s8c">
+  <div class="head"><span class="domain-tag">Donanım</span><span class="num">07</span><h2>Ölçeklenme</h2><span class="step">Kasalar</span></div>
+  <div class="figure">
+    <img src="assets/gorseller/kasalar.webp" alt="Kasa sıraları">
+  </div>
+</section>
+
+<section class="slide" id="s8d">
+  <div class="head"><span class="domain-tag">Donanım</span><span class="num">07</span><h2>Ölçeklenme</h2><span class="step">Veri merkezi</span></div>
+  <div class="figure stack">
+    <img class="lead" src="assets/gorseller/rubin-datacenter-beyaz.webp" alt="Rubin veri merkezi">
+    <img src="assets/gorseller/colossus.jpg" alt="Colossus veri merkezi">
+  </div>
+</section>
+
+<div id="zoom"><img alt=""></div>
+
+<script>
+  // ---- görsel üstüne gelince tam ekran göster ----
+  const zoom = document.getElementById('zoom');
+  const zoomImg = zoom.querySelector('img');
+
+  // yalnızca görselin ortadaki %50'lik alanı tetikler (her kenardan sqrt(0.5) ≈ %70.7)
+  const HOT = Math.sqrt(0.5) / 2; // merkeze uzaklık eşiği, normalize
+  let current = null;
+
+  function show(img) {
+    if (current === img) return;
+    current = img;
+    zoomImg.src = img.currentSrc || img.src;
+    zoomImg.alt = img.alt;
+    zoom.classList.add('on');
+  }
+  function hide() {
+    current = null;
+    zoom.classList.remove('on');
+  }
+
+  document.querySelectorAll('.figure img').forEach(img => {
+    img.addEventListener('mousemove', e => {
+      const r = img.getBoundingClientRect();
+      const dx = Math.abs((e.clientX - r.left) / r.width - 0.5);
+      const dy = Math.abs((e.clientY - r.top) / r.height - 0.5);
+      if (dx < HOT && dy < HOT) show(img); else hide();
+    });
+    img.addEventListener('mouseleave', hide);
+  });
+  // scroll ya da ESC ile de kapansın
+  window.addEventListener('wheel', hide, { passive: true });
+  window.addEventListener('keydown', e => { if (e.key === 'Escape') hide(); });
+
+  const links = [...document.querySelectorAll('.nav > a')];
+  const byId = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const slides = [...document.querySelectorAll('.slide')];
+
+  function setActive(id) {
+    links.forEach(a => a.classList.toggle('active', a === byId.get(id)));
+  }
+
+  const io = new IntersectionObserver(entries => {
+    // en çok görünen slaytı aktif say
+    const visible = entries
+      .filter(e => e.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (visible) setActive(visible.target.id);
+  }, { threshold: [0.25, 0.5, 0.75] });
+
+  slides.forEach(s => io.observe(s));
+  setActive(slides[0].id);
+</script>
+
+</body>
+</html>
